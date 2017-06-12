@@ -268,7 +268,10 @@ HRESULT App::CreateDeviceResources()
             D2D1::RenderTargetProperties(), // すべてデフォルト
             D2D1::HwndRenderTargetProperties(
                 m_hwnd,
-                D2D1::SizeU(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top)
+                D2D1::SizeU(
+                    clientRect.right - clientRect.left,
+                    clientRect.bottom - clientRect.top
+                )
             ),
             &m_pRenderTarget
         ));
@@ -302,11 +305,8 @@ D2D1_POINT_2F ComputePoint(const InputFunction& inputFunction, D2D1_SIZE_F size,
 
     double value = inputFunction.func(argX);
 
-    double y = size.height
-        - size.height * (
-            (value - inputFunction.startY)
-            / (inputFunction.endY - inputFunction.startY)
-        );
+    double y = size.height - size.height *
+        ((value - inputFunction.startY) / (inputFunction.endY - inputFunction.startY));
 
     return D2D1::Point2F(static_cast<FLOAT>(x), static_cast<FLOAT>(y));
 }
