@@ -22,15 +22,24 @@ struct InputFunction {
     double endY;
 };
 
+// 電圧 v を表す関数
+double v(double t) {
+    return t < 0 ? 0
+        : t < 3 ? 1 - exp(-2 * t)
+        : -exp(-2 * t) + exp(-2 * (t - 3));
+}
+
 // グラフを表示する関数をつくる
 InputFunction CreateInputFunction()
 {
     return InputFunction{
-        [](double x) { return sin(x); },
-        0.0, 6.0,
-        -1.5, 1.5
+        v,
+        0.0, 8.0, // 0 秒から 8 秒まで
+        -0.2, 1.2 // -0.5V から 1.5V まで 
     };
 }
+
+// 以下波形レンダリング用コード
 
 // 失敗したらそのエラーコードで return するマクロ
 // デバッグビルドではブレークする
@@ -196,11 +205,13 @@ int App::Run()
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (message == WM_CREATE) {
+        // ウィンドウ作成時に App インスタンスのポインタをウィンドウに紐づけておく
         LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
         App *pApp = (App*)pcs->lpCreateParams;
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pApp));
         return 1;
     } else {
+        // App インスタンスのポインタを取得して WndProcCore を呼び出す
         LONG_PTR userData = (LONG_PTR)GetWindowLongPtr(hwnd, GWLP_USERDATA);
         App *pApp = reinterpret_cast<App*>(userData);
         if (pApp != nullptr) {
@@ -216,14 +227,16 @@ LRESULT App::WndProcCore(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
     case WM_SIZE:
+        // ウィンドウサイズ変更
         OnResize(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_DISPLAYCHANGE:
-        // 画面書き換えを要求
+        // 画面のスケールが変わったので画面書き換えを要求
         InvalidateRect(m_hwnd, NULL, FALSE);
         return 0;
     case WM_PAINT:
     {
+        // レンダリング要求が来たので波形を描く
         HRESULT renderResult = OnRender();
         if (SUCCEEDED(renderResult)) {
             ValidateRect(m_hwnd, NULL);
@@ -321,8 +334,9 @@ HRESULT App::OnRender()
 
     HRESULT hr = m_pRenderTarget->EndDraw();
 
+    // RenderTarget の作り直し
     if (hr == D2DERR_RECREATE_TARGET) {
-        hr = S_OK();
+        hr = S_OK;
         SafeRelease(&m_pRenderTarget);
         SafeRelease(&m_pGraphLineBrush);
     }
